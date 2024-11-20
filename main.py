@@ -18,7 +18,6 @@ class ObjectDetection:
         self.model = self.load_model()
         self.CLASS_NAMES_DICT = self.model.names
 
-        # Updated: Generate colors for all classes
         self.box_annotator = BoxAnnotator(
             color=sv.ColorPalette.DEFAULT,
             thickness=3
@@ -41,13 +40,11 @@ class ObjectDetection:
             class_id=results[0].boxes.cls.cpu().numpy().astype(int)
         )
 
-        # Add labels for detected objects
         self.labels = [
             f"{self.CLASS_NAMES_DICT[class_id]}: {confidence:.2f}"
             for class_id, confidence in zip(detections.class_id, detections.confidence)
         ]
 
-        # Annotate frame
         frame = self.box_annotator.annotate(scene=frame, detections=detections)
         return frame
     
@@ -65,20 +62,16 @@ class ObjectDetection:
             results = self.predict(frame)
             frame = self.plot_bboxes(results, frame)
 
-            # Display FPS
             end_time = time()
             fps = 1 / np.round(end_time - start_time, 2)
             cv2.putText(frame, f"FPS: {fps}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
 
-            # Show frame
             cv2.imshow('YOLOv8 Detection', frame)
-            if cv2.waitKey(5) & 0xFF == 27:  # Exit on ESC key
+            if cv2.waitKey(5) & 0xFF == 27: 
                 break
 
         cap.release()
         cv2.destroyAllWindows()
 
-
-# Run the object detection
 detector = ObjectDetection(capture_index=0)
 detector()
