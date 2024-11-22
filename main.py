@@ -34,11 +34,28 @@ class ObjectDetection:
         return results
     
     def plot_bboxes(self, results, frame):
+        # focused_objects_ids removes unwanted classes/object boxes from the frame, only focusing on the intended detection
+        # id 0 = "person", id 43 = "knife"
+        focused_objects_ids = [0, 43]
+        xyxys = results[0].boxes.xyxy.cpu().numpy()
+        confidences = results[0].boxes.conf.cpu().numpy()
+        class_ids = results[0].boxes.cls.cpu().numpy().astype(int)
+
+        mask = np.isin(class_ids, focused_objects_ids)
+        filtered_xyxys = xyxys[mask]
+        filtered_confidences = confidences[mask]
+        filtered_class_ids = class_ids[mask]
+
         detections = Detections(
-            xyxy=results[0].boxes.xyxy.cpu().numpy(),
-            confidence=results[0].boxes.conf.cpu().numpy(),
-            class_id=results[0].boxes.cls.cpu().numpy().astype(int)
+            xyxy=filtered_xyxys,
+            confidence=filtered_confidences,
+            class_id=filtered_class_ids
         )
+        
+        knife_detected = 43 in filtered_class_ids
+        if knife_detected:
+            print("ALERT: Knife detected!")
+            self.send_alert(frame)
 
         self.labels = [
             f"{self.CLASS_NAMES_DICT[class_id]}: {confidence:.2f}"
@@ -47,6 +64,14 @@ class ObjectDetection:
 
         frame = self.box_annotator.annotate(scene=frame, detections=detections)
         return frame
+    
+    # Save a frame when a knife is detected as jpg and rewrites the file each time a new knife is detected
+    # Rewriting jpg file is done to avoid saving multiple images of the same knife detection
+    def send_alert(self, frame):
+        #timestamp = int(time())
+        filename = f"alert_knife_detected.jpg"
+        cv2.imwrite(filename, frame)
+        print(f"Alert image saved as {filename}")
     
     def __call__(self):
         cap = cv2.VideoCapture(self.capture_index)
