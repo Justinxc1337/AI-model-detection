@@ -3,6 +3,7 @@ import numpy as np
 import cv2
 from time import time
 from ultralytics import YOLO
+import os
 
 from supervision.draw.color import ColorPalette
 from supervision import Detections, BoxAnnotator
@@ -68,10 +69,11 @@ class ObjectDetection:
     # Save a frame when a knife is detected as jpg and rewrites the file each time a new knife is detected
     # Rewriting jpg file is done to avoid saving multiple images of the same knife detection
     def send_alert(self, frame):
-        #timestamp = int(time())
-        filename = f"alert_knife_detected.jpg"
+        static_folder_path = os.path.join(os.getcwd(), "static", "images")
+        os.makedirs(static_folder_path, exist_ok=True)
+        filename = os.path.join(static_folder_path, "alert_knife_detected.jpg")
         cv2.imwrite(filename, frame)
-        print(f"Alert image saved as {filename}")
+        print(f"Alert image saved at {filename}")
     
     def __call__(self):
         cap = cv2.VideoCapture(self.capture_index)
