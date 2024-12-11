@@ -7,9 +7,20 @@
     <title>Dashboard</title>
 </head>
 <body>
-    <div class="alert-container">
-        <h1>Knife Detected!</h1>
-        <img src="{{ url_for('static', filename='images/alert_knife_detected.jpg') }}" alt="Alert Image">
+    <div class="dashboard-container">
+        <h1>Knife Detection Dashboard</h1>
+        <div class="image-display">
+            <div class="image-card">
+                <h2>Original Image</h2>
+                <img src="{{ url_for('static', filename='images/alert_knife_detected.jpg') }}" alt="Original Image">
+                <p class="timestamp">{{ detection_time }}</p>
+            </div>
+            <div class="image-card">
+                <h2>Annotated Image</h2>
+                <img src="{{ url_for('static', filename='images/alert_knife_detected_annotated.jpg') }}" alt="Annotated Image">
+                <p class="timestamp">{{ detection_time }}</p>
+            </div>
+        </div>
     </div>
 </body>
 </html>

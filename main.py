@@ -4,6 +4,8 @@ import cv2
 from time import time
 from ultralytics import YOLO
 import os
+import time
+from datetime import datetime, timezone, timedelta
 
 from supervision.draw.color import ColorPalette
 from supervision import Detections, BoxAnnotator
@@ -15,9 +17,10 @@ class ObjectDetection:
         self.capture_index = capture_index
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         print(f"Device: {self.device}")
-
         self.model = self.load_model()
         self.CLASS_NAMES_DICT = self.model.names
+        self.box_annotator = BoxAnnotator(color=sv.ColorPalette.DEFAULT, thickness=3)
+        self.last_detection_time = 0  # Track the last time an image was saved (in seconds)
 
         self.box_annotator = BoxAnnotator(
             color=sv.ColorPalette.DEFAULT,
@@ -53,27 +56,47 @@ class ObjectDetection:
             class_id=filtered_class_ids
         )
         
+        annotated_frame = self.box_annotator.annotate(scene=frame.copy(), detections=detections)
+        
+        # Check for knife detection (object id 43)
         knife_detected = 43 in filtered_class_ids
-        if knife_detected:
+        current_time = time.time()
+        
+        if knife_detected and (current_time - self.last_detection_time > 10):  # 10-second delay
             print("ALERT: Knife detected!")
-            self.send_alert(frame)
+            self.last_detection_time = current_time  # Update last detection time
+            self.send_alert(frame, annotated_frame)
 
         self.labels = [
             f"{self.CLASS_NAMES_DICT[class_id]}: {confidence:.2f}"
             for class_id, confidence in zip(detections.class_id, detections.confidence)
         ]
 
-        frame = self.box_annotator.annotate(scene=frame, detections=detections)
-        return frame
+        return annotated_frame
     
     # Save a frame when a knife is detected as jpg and rewrites the file each time a new knife is detected
     # Rewriting jpg file is done to avoid saving multiple images of the same knife detection
-    def send_alert(self, frame):
+    def send_alert(self, frame, annotated_frame):
+        # Get current time in CET
+        cet_time = datetime.now(timezone.utc) + timedelta(hours=1)  # UTC+1 for Danish CET
+        timestamp = cet_time.strftime("%Y-%m-%d_%H-%M-%S")
+        display_time = cet_time.strftime("%d/%m/%Y %H:%M:%S")
+
+        # Define paths for saving images
         static_folder_path = os.path.join(os.getcwd(), "static", "images")
         os.makedirs(static_folder_path, exist_ok=True)
-        filename = os.path.join(static_folder_path, "alert_knife_detected.jpg")
-        cv2.imwrite(filename, frame)
-        print(f"Alert image saved at {filename}")
+
+        # Save the original and annotated images with timestamp
+        original_filename = f"alert_knife_detected_{timestamp}.jpg"
+        annotated_filename = f"alert_knife_detected_annotated_{timestamp}.jpg"
+
+        cv2.imwrite(os.path.join(static_folder_path, original_filename), frame)
+        cv2.imwrite(os.path.join(static_folder_path, annotated_filename), annotated_frame)
+
+        # Save metadata for frontend
+        with open(os.path.join(static_folder_path, "detection_info.txt"), "w") as f:
+            f.write(f"{original_filename},{annotated_filename},{display_time}")
+
     
     def __call__(self):
         cap = cv2.VideoCapture(self.capture_index)
@@ -82,14 +105,14 @@ class ObjectDetection:
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
 
         while True:
-            start_time = time()
+            start_time = time.time()  # Corrected
             ret, frame = cap.read()
             assert ret
 
             results = self.predict(frame)
             frame = self.plot_bboxes(results, frame)
 
-            end_time = time()
+            end_time = time.time()  # Corrected
             fps = 1 / np.round(end_time - start_time, 2)
             cv2.putText(frame, f"FPS: {fps}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
 
@@ -99,6 +122,7 @@ class ObjectDetection:
 
         cap.release()
         cv2.destroyAllWindows()
+
 
 detector = ObjectDetection(capture_index=0)
 detector()
