@@ -7,20 +7,24 @@
     <title>Dashboard</title>
 </head>
 <body>
-    <div class="dashboard-container">
-        <h1>Knife Detection Dashboard</h1>
-        <div class="image-display">
-            <div class="image-card">
-                <h2>Original Image</h2>
-                <img src="{{ url_for('static', filename='images/alert_knife_detected.jpg') }}" alt="Original Image">
-                <p class="timestamp">{{ detection_time }}</p>
+    <div class="alert-container">
+        <h1>Knife Detection Alerts</h1>
+        {% if original_image and annotated_image and detection_time %}
+            <div class="image-container">
+                <div class="image-box">
+                    <h3>Original Image</h3>
+                    <img src="{{ url_for('static', filename='images/original/' + original_image) }}" alt="Original Image">
+                    <p>Detection Time: {{ detection_time }}</p>
+                </div>
+                <div class="image-box">
+                    <h3>Annotated Image</h3>
+                    <img src="{{ url_for('static', filename='images/annotated/' + annotated_image) }}" alt="Annotated Image">
+                    <p>Detection Time: {{ detection_time }}</p>
+                </div>
             </div>
-            <div class="image-card">
-                <h2>Annotated Image</h2>
-                <img src="{{ url_for('static', filename='images/alert_knife_detected_annotated.jpg') }}" alt="Annotated Image">
-                <p class="timestamp">{{ detection_time }}</p>
-            </div>
-        </div>
+        {% else %}
+            <p>No alerts detected yet.</p>
+        {% endif %}
     </div>
 </body>
 </html>

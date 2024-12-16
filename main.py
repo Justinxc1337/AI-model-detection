@@ -84,14 +84,18 @@ class ObjectDetection:
 
         # Define paths for saving images
         static_folder_path = os.path.join(os.getcwd(), "static", "images")
-        os.makedirs(static_folder_path, exist_ok=True)
+        original_folder_path = os.path.join(static_folder_path, "original")
+        annotated_folder_path = os.path.join(static_folder_path, "annotated")
+
+        os.makedirs(original_folder_path, exist_ok=True)
+        os.makedirs(annotated_folder_path, exist_ok=True)
 
         # Save the original and annotated images with timestamp
         original_filename = f"alert_knife_detected_{timestamp}.jpg"
         annotated_filename = f"alert_knife_detected_annotated_{timestamp}.jpg"
 
-        cv2.imwrite(os.path.join(static_folder_path, original_filename), frame)
-        cv2.imwrite(os.path.join(static_folder_path, annotated_filename), annotated_frame)
+        cv2.imwrite(os.path.join(original_folder_path, original_filename), frame)
+        cv2.imwrite(os.path.join(annotated_folder_path, annotated_filename), annotated_frame)
 
         # Save metadata for frontend
         with open(os.path.join(static_folder_path, "detection_info.txt"), "w") as f:
