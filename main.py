@@ -11,6 +11,13 @@ from supervision.draw.color import ColorPalette
 from supervision import Detections, BoxAnnotator
 import supervision as sv
 
+import smtplib
+import json
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email import encoders
+
 class ObjectDetection:
 
     def __init__(self, capture_index):
@@ -26,6 +33,64 @@ class ObjectDetection:
             color=sv.ColorPalette.DEFAULT,
             thickness=3
         )
+        
+    def load_config(self):
+        try:
+            with open("config.json", "r") as config_file:
+                config = json.load(config_file)
+            return config
+        except Exception as e:
+            print(f"Failed to load config.json: {e}")
+            return None
+
+    def send_email(self, original_path, annotated_path, display_time):
+        config = self.load_config()
+        if not config:
+            print("Email not sent: Configuration file is missing or invalid.")
+            return
+
+        try:
+            sender_email = config["sender_email"]
+            receiver_email = config["receiver_email"]
+            password = config["app_password"]
+
+            # Content included in the email
+            subject = "Knife Detection Alert {display_time}"
+            body = f"Knife detected at {display_time}. Attached are the detection images."
+
+            # Setting up the email 
+            msg = MIMEMultipart()
+            msg['From'] = sender_email
+            msg['To'] = receiver_email
+            msg['Subject'] = subject
+            msg.attach(MIMEText(body, 'plain'))
+
+            # Original image attachment (the image without AI boxes)
+            with open(original_path, 'rb') as attachment:
+                part = MIMEBase('application', 'octet-stream')
+                part.set_payload(attachment.read())
+            encoders.encode_base64(part)
+            part.add_header('Content-Disposition', f"attachment; filename={original_path.split('/')[-1]}")
+            msg.attach(part)
+
+            # Annotation image attachment (the image with AI boxes)
+            with open(annotated_path, 'rb') as attachment:
+                part = MIMEBase('application', 'octet-stream')
+                part.set_payload(attachment.read())
+            encoders.encode_base64(part)
+            part.add_header('Content-Disposition', f"attachment; filename={annotated_path.split('/')[-1]}")
+
+            msg.attach(part)
+
+            # Send email using Gmail SMTP server
+            with smtplib.SMTP('smtp.gmail.com', 587) as server:
+                server.starttls()
+                server.login(sender_email, password)
+                server.send_message(msg)
+
+            print("Email sent successfully!")
+        except Exception as e:
+            print(f"Failed to send email: {e}")
 
         
     def load_model(self):
@@ -100,6 +165,11 @@ class ObjectDetection:
         # Save metadata for frontend
         with open(os.path.join(static_folder_path, "detection_info.txt"), "w") as f:
             f.write(f"{original_filename},{annotated_filename},{display_time}")
+            
+        original_path = os.path.join(original_folder_path, original_filename)
+        annotated_path = os.path.join(annotated_folder_path, annotated_filename)
+            
+        self.send_email(original_path, annotated_path, display_time)
 
     
     def __call__(self):
