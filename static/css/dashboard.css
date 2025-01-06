@@ -1,62 +1,133 @@
-/* General body styling */
 body {
     font-family: Arial, sans-serif;
     margin: 0;
-    padding: 0;
+    padding: 20px;
     background-color: #f4f4f9;
     color: #333;
 }
 
-/* Dashboard container styling */
-.dashboard-container {
+.container {
     text-align: center;
-    padding: 20px;
 }
 
 h1 {
-    color: #444;
+    font-size: 2em;
     margin-bottom: 20px;
-    font-size: 2.5em;
 }
 
-/* Image display container */
-.image-display {
+.image-selector {
+    margin-bottom: 20px;
+}
+
+.image-container {
     display: flex;
     justify-content: center;
-    flex-wrap: wrap;
     gap: 20px;
-    margin-top: 20px;
 }
 
-/* Individual image card styling */
-.image-card {
-    background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    padding: 15px;
+.image-box {
     max-width: 300px;
     text-align: center;
-    transition: transform 0.3s ease;
 }
 
-.image-card:hover {
-    transform: scale(1.05);
-}
-
-.image-card img {
-    max-width: 100%;
+.image-box img {
+    width: 100%;
     height: auto;
+    border: 1px solid #ddd;
     border-radius: 4px;
-    margin-bottom: 10px;
 }
 
-.image-card h2 {
-    margin: 0;
-    font-size: 1.2em;
-    color: #555;
+label {
+    font-size: 1.1em;
+    margin-right: 10px;
 }
 
-.timestamp {
-    font-size: 0.9em;
-    color: #888;
+select {
+    font-size: 1em;
+    padding: 5px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+}
+
+.logout a {
+    display: inline-block;
+    padding: 10px 20px;
+    margin: 5px;
+    margin-bottom: 15px;
+    background-color: #ff4d4d;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    font-size: 1em;
+    transition: background-color 0.3s ease;
+}
+
+.logout a:hover {
+    background-color: #ff1a1a;
+}
+
+.original-image {
+    margin-top: 10px;
+    transition:transform 0.25s ease;
+}
+
+.annotated-image {
+    margin-top: 10px;
+    transition:transform 0.25s ease;
+}
+
+.original-image:hover {
+    transform:scale(2.0);
+}
+
+.annotated-image:hover {
+    transform:scale(2.0);
+}
+
+.imgmodel {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.8);
+    justify-content: center;
+}
+
+.imgmodel-content {
+    margin: auto;
+    margin-top: 100px!important;
+    display: block;
+    width: 80%;
+    max-width: 900px;
+}
+
+.imgmodel-content, .close {
+    animation-name: zoom;
+    animation-duration: 0.6s;
+}
+
+@keyframes zoom {
+    from {transform: scale(0)}
+    to {transform: scale(1)}
+}
+
+.close {
+    position: absolute;
+    top: 15px;
+    right: 35px;
+    color: #fff;
+    font-size: 40px;
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+.close:hover,
+.close:focus {
+    color: #bbb;
+    text-decoration: none;
+    cursor: pointer;
 }

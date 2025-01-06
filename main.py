@@ -18,6 +18,12 @@ from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders
 
+# Currently hardcoded for each instance of the program and where it is running
+Country = "Denmark"
+City = "Næstved"
+Company = "Zealand Sjællands Erhvervsakademi"
+Location = "Main Entrance"
+
 class ObjectDetection:
 
     def __init__(self, capture_index):
@@ -43,7 +49,7 @@ class ObjectDetection:
             print(f"Failed to load config.json: {e}")
             return None
 
-    def send_email(self, original_path, annotated_path, display_time):
+    def send_email(self, original_path, annotated_path, formatted_timestamp):
         config = self.load_config()
         if not config:
             print("Email not sent: Configuration file is missing or invalid.")
@@ -55,15 +61,18 @@ class ObjectDetection:
             password = config["app_password"]
 
             # Content included in the email
-            subject = "Knife Detection Alert {display_time}"
-            body = f"Knife detected at {display_time}. Attached are the detection images."
+            subject = f"Knife Detection Alert {Company}, {Location}"
+            body = f"""Knife detected at {formatted_timestamp}. From {Country}, {City}, at {Company}, Camera location - {Location}.
+                \nBoth images attached: Original and Annotated.
+                \nRed boxes indicate the detected dangerous objects and purple boxes indicate the detected people."""
+
 
             # Setting up the email 
             msg = MIMEMultipart()
             msg['From'] = sender_email
             msg['To'] = receiver_email
             msg['Subject'] = subject
-            msg.attach(MIMEText(body, 'plain'))
+            msg.attach(MIMEText(body, 'plain', 'utf-8'))
 
             # Original image attachment (the image without AI boxes)
             with open(original_path, 'rb') as attachment:
@@ -142,12 +151,11 @@ class ObjectDetection:
     # Save a frame when a knife is detected as jpg and rewrites the file each time a new knife is detected
     # Rewriting jpg file is done to avoid saving multiple images of the same knife detection
     def send_alert(self, frame, annotated_frame):
-        # Get current time in CET
-        cet_time = datetime.now(timezone.utc) + timedelta(hours=1)  # UTC+1 for Danish CET
-        timestamp = cet_time.strftime("%Y-%m-%d_%H-%M-%S")
-        display_time = cet_time.strftime("%d/%m/%Y %H:%M:%S")
+        cet_time = datetime.now(timezone.utc) + timedelta(hours=1)
+        formatted_date = cet_time.strftime("%dD, %mM, %YY")
+        formatted_time = cet_time.strftime("%HH, %MM, %SS")
+        formatted_timestamp = f"{formatted_date}, {formatted_time}"
 
-        # Define paths for saving images
         static_folder_path = os.path.join(os.getcwd(), "static", "images")
         original_folder_path = os.path.join(static_folder_path, "original")
         annotated_folder_path = os.path.join(static_folder_path, "annotated")
@@ -155,21 +163,23 @@ class ObjectDetection:
         os.makedirs(original_folder_path, exist_ok=True)
         os.makedirs(annotated_folder_path, exist_ok=True)
 
-        # Save the original and annotated images with timestamp
-        original_filename = f"alert_knife_detected_{timestamp}.jpg"
-        annotated_filename = f"alert_knife_detected_annotated_{timestamp}.jpg"
+        original_filename = f"alert_knife_detected_{formatted_date}_{formatted_time}.jpg"
+        annotated_filename = f"alert_knife_detected_annotated_{formatted_date}_{formatted_time}.jpg"
 
-        cv2.imwrite(os.path.join(original_folder_path, original_filename), frame)
-        cv2.imwrite(os.path.join(annotated_folder_path, annotated_filename), annotated_frame)
+        original_path = os.path.join(original_folder_path, original_filename)
+        annotated_path = os.path.join(annotated_folder_path, annotated_filename)
+
+        cv2.imwrite(original_path, frame)
+        cv2.imwrite(annotated_path, annotated_frame)
 
         # Save metadata for frontend
         with open(os.path.join(static_folder_path, "detection_info.txt"), "w") as f:
-            f.write(f"{original_filename},{annotated_filename},{display_time}")
-            
-        original_path = os.path.join(original_folder_path, original_filename)
-        annotated_path = os.path.join(annotated_folder_path, annotated_filename)
-            
-        self.send_email(original_path, annotated_path, display_time)
+            f.write(f"{original_filename},{annotated_filename},{formatted_timestamp}")
+
+        # Notify via email
+        self.send_email(original_path, annotated_path, formatted_timestamp)
+
+
 
     
     def __call__(self):
@@ -179,14 +189,14 @@ class ObjectDetection:
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
 
         while True:
-            start_time = time.time()  # Corrected
+            start_time = time.time()
             ret, frame = cap.read()
             assert ret
 
             results = self.predict(frame)
             frame = self.plot_bboxes(results, frame)
 
-            end_time = time.time()  # Corrected
+            end_time = time.time()
             fps = 1 / np.round(end_time - start_time, 2)
             cv2.putText(frame, f"FPS: {fps}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
 

@@ -3,28 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
     <title>Dashboard</title>
 </head>
 <body>
-    <div class="alert-container">
-        <h1>Knife Detection Alerts</h1>
-        {% if original_image and annotated_image and detection_time %}
-            <div class="image-container">
-                <div class="image-box">
-                    <h3>Original Image</h3>
-                    <img src="{{ url_for('static', filename='images/original/' + original_image) }}" alt="Original Image">
-                    <p>Detection Time: {{ detection_time }}</p>
-                </div>
-                <div class="image-box">
-                    <h3>Annotated Image</h3>
-                    <img src="{{ url_for('static', filename='images/annotated/' + annotated_image) }}" alt="Annotated Image">
-                    <p>Detection Time: {{ detection_time }}</p>
-                </div>
+    <div class="container">
+        <h1>Knife Detection Dashboard</h1>
+        <div class="logout">
+            <a href="{{ url_for('logout') }}">Logout</a>
+        </div>
+        <div class="image-selector">
+            <label for="image-select">Choose an image:</label>
+            <select id="image-select" onchange="updateImages()">
+                {% for image in image_list %}
+                    <option value="{{ image.timestamp }}" {% if image.timestamp == selected_image %}selected{% endif %}>
+                        {{ image.formatted_timestamp }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="image-container">
+            <div class="image-box">
+                <h3>Original Image ({{ selected_formatted_timestamp }})</h3>
+                <img src="{{ url_for('static', filename='images/original/' + selected_original) }}" alt="Original Image" class="original-image" onclick="openimgmodel(this.src)">
             </div>
-        {% else %}
-            <p>No alerts detected yet.</p>
-        {% endif %}
+            <div class="image-box">
+                <h3>Annotated Image ({{ selected_formatted_timestamp }})</h3>
+                <img src="{{ url_for('static', filename='images/annotated/' + selected_annotated) }}" alt="Annotated Image" class="annotated-image" onclick="openimgmodel(this.src)">
+            </div>
+        </div>
+    </div>
+
+    <div id="image-imgmodel" class="imgmodel">
+        <span class="close" onclick="closeimgmodel()">&times;</span>
+        <img class="imgmodel-content" id="imgmodel-image">
     </div>
 </body>
 </html>
