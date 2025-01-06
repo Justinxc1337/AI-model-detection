@@ -18,6 +18,8 @@ from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders
 
+from twilio.rest import Client
+
 # Currently hardcoded for each instance of the program and where it is running
 Country = "Denmark"
 City = "Næstved"
@@ -48,6 +50,32 @@ class ObjectDetection:
         except Exception as e:
             print(f"Failed to load config.json: {e}")
             return None
+        
+    def send_sms(self, formatted_timestamp):
+        config = self.load_config()
+        if not config:
+            print("SMS not sent: Configuration file is missing or invalid.")
+            return
+
+        # Twilio credentials trial version (Twilio is a paid service)
+        account_sid = config["twilio_account_sid"]
+        auth_token = config["twilio_auth_token"]
+        twilio_phone_number = config["twilio_phone_number"]
+        receiver_phone_number = config["sms_receiver_phone_number"]
+
+        client = Client(account_sid, auth_token)
+
+        try:
+            message = client.messages.create(
+                # Content included in the SMS
+                body=f"""Knife detected at {formatted_timestamp}. From {Country}, {City}, at {Company}, Camera location - {Location}.
+                \nPlease check the email for attached images or access the dashboard.""",
+                from_=twilio_phone_number,
+                to=receiver_phone_number
+            )
+            print(f"SMS sent successfully! SID: {message.sid}")
+        except Exception as e:
+            print(f"Failed to send SMS: {e}")
 
     def send_email(self, original_path, annotated_path, formatted_timestamp):
         config = self.load_config()
@@ -178,6 +206,7 @@ class ObjectDetection:
 
         # Notify via email
         self.send_email(original_path, annotated_path, formatted_timestamp)
+        self.send_sms(formatted_timestamp)
 
 
 
