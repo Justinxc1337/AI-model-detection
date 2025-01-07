@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
-    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}" defer></script>
     <title>Dashboard</title>
 </head>
 <body>
@@ -26,12 +26,17 @@
         <div class="image-container">
             <div class="image-box">
                 <h3>Original Image ({{ selected_formatted_timestamp }})</h3>
-                <img src="{{ url_for('static', filename='images/original/' + selected_original) }}" alt="Original Image" class="original-image" onclick="openimgmodel(this.src)">
+                <img id="original-image" src="{{ url_for('static', filename='images/original/' + selected_original) }}" alt="Original Image" onclick="openimgmodel(this.src)">
             </div>
             <div class="image-box">
                 <h3>Annotated Image ({{ selected_formatted_timestamp }})</h3>
-                <img src="{{ url_for('static', filename='images/annotated/' + selected_annotated) }}" alt="Annotated Image" class="annotated-image" onclick="openimgmodel(this.src)">
+                <img id="annotated-image" src="{{ url_for('static', filename='images/annotated/' + selected_annotated) }}" alt="Annotated Image" onclick="openimgmodel(this.src)">
             </div>
+        </div>
+        <div class="email-form">
+            <label for="recipient-email">Send selected images to email:</label>
+            <input type="email" id="recipient-email" placeholder="Enter recipient email" required>
+            <button onclick="sendEmail()">Send Email</button>
         </div>
     </div>
 

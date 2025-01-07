@@ -35,6 +35,12 @@ h1 {
     height: auto;
     border: 1px solid #ddd;
     border-radius: 4px;
+    transition: transform 0.3s ease;
+    cursor: pointer;
+}
+
+.image-box img:hover {
+    transform: scale(1.7);
 }
 
 label {
@@ -130,4 +136,30 @@ select {
     color: #bbb;
     text-decoration: none;
     cursor: pointer;
+}
+
+.email-form {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.email-form input[type="text"] {
+    padding: 10px;
+    font-size: 1em;
+    width: 300px;
+    margin-right: 10px;
+}
+
+.email-form button {
+    padding: 10px 20px;
+    font-size: 1em;
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.email-form button:hover {
+    background-color: #0056b3;
 }

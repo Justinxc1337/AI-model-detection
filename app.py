@@ -1,8 +1,14 @@
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email import encoders
 import os
-from flask import Flask, render_template, request, redirect, url_for, session
+import json
 
 app = Flask(__name__)
-app.secret_key = 'your_secret_key'  # Required for session handling
+app.secret_key = 'your_secret_key'
 
 # Hardcoded user credentials for proof of concept
 USER_CREDENTIALS = {
@@ -70,6 +76,68 @@ def dashboard_page():
         selected_original=selected_image['original'] if selected_image else None,
         selected_annotated=selected_image['annotated'] if selected_image else None
     )
+    
+from urllib.parse import unquote
+
+@app.route('/send_email', methods=['POST'])
+def send_email():
+    data = request.json
+    email = data.get('email')
+    # Decode both URL-encoded filenames
+    original_image = unquote(data.get('original_image'))
+    annotated_image = unquote(data.get('annotated_image'))
+
+    # Path to the images
+    static_folder_path = os.path.join(os.getcwd(), "static")
+    original_image_path = os.path.join(static_folder_path, original_image.replace("\\", "/"))
+    annotated_image_path = os.path.join(static_folder_path, annotated_image.replace("\\", "/"))
+
+    if not os.path.exists(original_image_path) or not os.path.exists(annotated_image_path):
+        return jsonify({"success": False, "error": "One or more image files not found."}), 404
+
+    # Load email credentials from config.json
+    with open("config.json", "r") as config_file:
+        config = json.load(config_file)
+        sender_email = config["sender_email"]
+        app_password = config["app_password"]
+
+    # Create email
+    subject = "Knife Detection Images"
+    body = f"Here are the images for the selected detection event:\n\nOriginal: {original_image}\nAnnotated: {annotated_image}"
+
+    msg = MIMEMultipart()
+    msg['From'] = sender_email
+    msg['To'] = email
+    msg['Subject'] = subject
+    msg.attach(MIMEText(body, 'plain'))
+
+    # Attach original image
+    with open(original_image_path, 'rb') as attachment:
+        part = MIMEBase('application', 'octet-stream')
+        part.set_payload(attachment.read())
+    encoders.encode_base64(part)
+    part.add_header('Content-Disposition', f'attachment; filename={original_image.split("/")[-1]}')
+    msg.attach(part)
+
+    # Attach annotated image
+    with open(annotated_image_path, 'rb') as attachment:
+        part = MIMEBase('application', 'octet-stream')
+        part.set_payload(attachment.read())
+    encoders.encode_base64(part)
+    part.add_header('Content-Disposition', f'attachment; filename={annotated_image.split("/")[-1]}')
+    msg.attach(part)
+
+    # Send email
+    try:
+        with smtplib.SMTP('smtp.gmail.com', 587) as server:
+            server.starttls()
+            server.login(sender_email, app_password)
+            server.send_message(msg)
+        return jsonify({"success": True}), 200
+    except Exception as e:
+        print(f"Failed to send email: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
 
 
 if __name__ == "__main__":
