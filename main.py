@@ -30,7 +30,7 @@ class ObjectDetection:
 
     def __init__(self, capture_index):
         self.capture_index = capture_index
-        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu' # CUDA = NVIDIA GPU, if not available use CPU
         print(f"Device: {self.device}")
         self.model = self.load_model()
         self.CLASS_NAMES_DICT = self.model.names
@@ -141,7 +141,7 @@ class ObjectDetection:
     
     def plot_bboxes(self, results, frame):
         # focused_objects_ids removes unwanted classes/object boxes from the frame, only focusing on the intended detection
-        # id 0 = "person", id 43 = "knife"
+        # id 0 = "person", id 43 = "knife" - if outside 2 = "car", 3 = "motorcycle"
         focused_objects_ids = [0, 43]
         xyxys = results[0].boxes.xyxy.cpu().numpy()
         confidences = results[0].boxes.conf.cpu().numpy()
