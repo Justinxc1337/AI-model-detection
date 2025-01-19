@@ -79,6 +79,27 @@ def dashboard_page():
     
 from urllib.parse import unquote
 
+@app.route('/calendar')
+def calendar_page():
+    static_folder_path = os.path.join(os.getcwd(), "static", "images", "original")
+    detection_dates = []
+
+    if os.path.exists(static_folder_path):
+        for filename in os.listdir(static_folder_path):
+            if filename.startswith("alert_knife_detected") and filename.endswith(".jpg"):
+                # Extract the date from the filename
+                parts = filename.split("_")
+                if len(parts) > 4:  # Ensure valid structure
+                    date_part = parts[3]  # "05D, 01M, 2025Y"
+                    formatted_date = date_part.replace("D", "").replace("M", "").replace("Y", "").replace(",", "").strip()
+                    detection_dates.append(formatted_date)
+
+    print("Detection Dates:", detection_dates)
+
+    return render_template('calendar.html', detection_dates=json.dumps(detection_dates))
+
+
+
 @app.route('/send_email', methods=['POST'])
 def send_email():
     data = request.json
@@ -137,7 +158,6 @@ def send_email():
     except Exception as e:
         print(f"Failed to send email: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
-
 
 
 if __name__ == "__main__":
