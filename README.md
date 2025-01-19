@@ -85,7 +85,7 @@ This application is designed as a proof of concept and includes the following li
 When a knife is detected:
 1. The system saves both the original and annotated images in the `static/images` directory.
 2. An email alert is sent to the specified recipient with the images attached.
-3. An SMS alert (not available)
+3. An SMS alert (Twilio service)
 
 ## Folder Structure
 
