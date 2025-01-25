@@ -84,8 +84,8 @@ function generateCalendar(detectionDates) {
                 dayDiv.appendChild(countBadge);
 
                 // Add click event to show detection details
-                dayDiv.addEventListener("click", function () {
-                    showDetectionDetails(formattedDate, detections);
+                dayDiv.addEventListener("click", function (event) {
+                    showDetectionDetails(event, formattedDate, detections);
                 });
             }
 
@@ -97,13 +97,51 @@ function generateCalendar(detectionDates) {
     }
 }
 
-function showDetectionDetails(date, detections) {
-    const detailsContainer = document.getElementById("detection-details");
-    detailsContainer.innerHTML = `<h3>Detections for ${date}</h3>`;
+function showDetectionDetails(event, date, detections) {
+    const existingPopup = document.querySelector(".detection-popup");
+    if (existingPopup) {
+        existingPopup.remove();
+    }
+
+    const popup = document.createElement("div");
+    popup.className = "detection-popup";
+
+    const popupContent = document.createElement("div");
+    popupContent.className = "detection-popup-content";
+
+    const closeButton = document.createElement("span");
+    closeButton.className = "close-popup";
+    closeButton.textContent = "×";
+    closeButton.onclick = () => popup.remove();
+    popupContent.appendChild(closeButton);
+
+    const title = document.createElement("h3");
+    title.textContent = `Detections for ${date}`;
+    popupContent.appendChild(title);
+
+    const detectionList = document.createElement("ul");
+    detectionList.className = "detection-list";
+
     detections.forEach(time => {
-        const timeDiv = document.createElement("div");
-        timeDiv.className = "detection-time";
-        timeDiv.textContent = `Time: ${time}`;
-        detailsContainer.appendChild(timeDiv);
+        if (time) {
+            const listItem = document.createElement("li");
+            listItem.className = "detection-list-item";
+
+            const timeLink = document.createElement("a");
+            timeLink.href = `/dashboard?timestamp=${date} ${time}`;
+            timeLink.textContent = `Time: ${time}`;
+            timeLink.className = "detection-time-link";
+            listItem.appendChild(timeLink);
+
+            detectionList.appendChild(listItem);
+        }
     });
+
+    popupContent.appendChild(detectionList);
+    popup.appendChild(popupContent);
+    document.body.appendChild(popup);
+
+    const rect = event.target.getBoundingClientRect();
+    popup.style.top = `${rect.top + window.scrollY + rect.height}px`;
+    popup.style.left = `${rect.left + window.scrollX}px`;
 }

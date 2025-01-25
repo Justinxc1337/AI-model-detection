@@ -92,6 +92,12 @@ body {
     border: 2px solid #fff;
 }
 
+.calendar-day .detection-count {
+    font-size: 12px;
+    color: #333;
+    margin-top: 5px;
+}
+
 .legend {
     margin-top: 20px;
     display: flex;
@@ -168,7 +174,6 @@ body {
     margin-top: 5px;
 }
 
-
 .detection-day:hover {
     background-color: #ff9999;
 }
@@ -188,4 +193,43 @@ body {
 .go-to-dashboard:hover {
     text-decoration: underline;
     color: #0056b3;
+}
+
+.detection-popup {
+    position: absolute;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    padding: 10px;
+    width: 200px;
+}
+
+.detection-popup-content {
+    position: relative;
+}
+
+.close-popup {
+    position: absolute;
+    top: 5px;
+    right: 10px;
+    cursor: pointer;
+    font-size: 16px;
+    color: #888;
+}
+
+.close-popup:hover {
+    color: #333;
+}
+
+.detection-time-link {
+    display: block;
+    margin-top: 5px;
+    color: #007bff;
+    text-decoration: none;
+}
+
+.detection-time-link:hover {
+    text-decoration: underline;
 }

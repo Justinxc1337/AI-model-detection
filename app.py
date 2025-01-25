@@ -158,7 +158,23 @@ def send_email():
     except Exception as e:
         print(f"Failed to send email: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
+    
+@app.route('/api/detections', methods=['GET'])
+def get_detections():
+    static_folder_path = os.path.join(os.getcwd(), "static", "images", "original")
+    detection_data = []
 
+    if os.path.exists(static_folder_path):
+        for filename in os.listdir(static_folder_path):
+            if filename.startswith("alert_knife_detected") and filename.endswith(".jpg"):
+                parts = filename.split("_")
+                if len(parts) > 4:
+                    date_part = parts[3]
+                    time_part = parts[4].replace(".jpg", "")
+                    formatted_date = date_part.replace("D", "").replace("M", "").replace("Y", "").replace(",", "").strip()
+                    detection_data.append({"date": formatted_date, "time": time_part, "filename": filename})
+
+    return jsonify(detection_data)
 
 if __name__ == "__main__":
     app.run(debug=True, use_reloader=False)
