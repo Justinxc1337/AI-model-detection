@@ -6,8 +6,10 @@ from email.mime.base import MIMEBase
 from email import encoders
 import os
 import json
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 app.secret_key = 'your_secret_key'
 
 # Hardcoded user credentials for proof of concept
