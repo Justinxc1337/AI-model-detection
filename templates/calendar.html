@@ -8,6 +8,24 @@
     <script src="{{ url_for('static', filename='js/calendar.js') }}"></script>
 </head>
 <body>
+    <div class="container">
+        <div class="header">
+            <h1>Detection Calendar</h1>
+            <a href="{{ url_for('logout') }}">Logout</a>
+            <a href="{{ url_for('dashboard_page') }}">Back to Dashboard</a>
+        </div>
+        <div class="export-options">
+            <label for="export-select">Export Data:</label>
+            <select id="export-select">
+                <option value="">Select format</option>
+                <option value="excel">Excel</option>
+                <option value="txt">TXT</option>
+                <option value="json">JSON</option>
+            </select>
+            <button onclick="exportData()">Export</button>
+        </div>
+    </div>
+
     <div id="calendar"></div>
 
     <div id="detection-data" style="display: none;">{{ detection_dates | safe }}</div>

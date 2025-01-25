@@ -233,3 +233,60 @@ body {
 .detection-time-link:hover {
     text-decoration: underline;
 }
+
+.detection-details-box {
+    background-color: #f9f9f9;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 10px;
+    margin-bottom: 10px;
+    font-size: 14px;
+    color: #333;
+    position: absolute;
+    width: 200px;
+    z-index: 1000;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+    top: -150%;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.detection-details-box h4 {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.detection-details-box ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+.detection-details-box li {
+    padding: 5px 0;
+}
+
+.detection-details-box li:not(:last-child) {
+    border-bottom: 1px solid #ddd;
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.header a {
+    display: inline-block;
+    padding: 10px 20px;
+    margin: 5px;
+    background-color: #ff4d4d;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    font-size: 1em;
+    transition: background-color 0.3s ease;
+}
+
+.header a:hover {
+    background-color: #ff1a1a;
+}

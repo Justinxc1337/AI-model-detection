@@ -7,6 +7,8 @@ from email import encoders
 import os
 import json
 from flask_cors import CORS
+from flask import Flask, request, jsonify, send_file
+import pandas as pd
 
 app = Flask(__name__)
 CORS(app)
@@ -80,6 +82,13 @@ def dashboard_page():
     )
     
 from urllib.parse import unquote
+
+@app.route('/api/detection-files')
+def get_detection_files():
+    original_folder_path = os.path.join(os.getcwd(), 'static', 'images', 'original')
+    filenames = os.listdir(original_folder_path)
+    return jsonify(filenames)
+
 
 @app.route('/calendar')
 def calendar_page():
@@ -177,6 +186,47 @@ def get_detections():
                     detection_data.append({"date": formatted_date, "time": time_part, "filename": filename})
 
     return jsonify(detection_data)
+
+@app.route('/export_data')
+def export_data():
+    format = request.args.get('format')
+    if not format:
+        return jsonify({"error": "No format specified"}), 400
+
+    static_folder_path = os.path.join(os.getcwd(), "static", "images", "original")
+    detection_data = []
+
+    if os.path.exists(static_folder_path):
+        for filename in os.listdir(static_folder_path):
+            if filename.startswith("alert_knife_detected") and filename.endswith(".jpg"):
+                parts = filename.split("_")
+                if len(parts) > 4:
+                    date_part = parts[3]
+                    time_part = parts[4].replace(".jpg", "")
+                    formatted_date = date_part.replace("D", "").replace("M", "").replace("Y", "").replace(",", "").strip()
+                    detection_data.append({"date": formatted_date, "time": time_part, "filename": filename})
+
+    if format == 'excel':
+        df = pd.DataFrame(detection_data)
+        file_path = os.path.join(static_folder_path, 'detection_data.xlsx')
+        df.to_excel(file_path, index=False)
+        return send_file(file_path, as_attachment=True)
+
+    elif format == 'txt':
+        file_path = os.path.join(static_folder_path, 'detection_data.txt')
+        with open(file_path, 'w') as f:
+            for item in detection_data:
+                f.write(f"{item['date']} {item['time']} {item['filename']}\n")
+        return send_file(file_path, as_attachment=True)
+
+    elif format == 'json':
+        file_path = os.path.join(static_folder_path, 'detection_data.json')
+        with open(file_path, 'w') as f:
+            json.dump(detection_data, f)
+        return send_file(file_path, as_attachment=True)
+
+    else:
+        return jsonify({"error": "Invalid format specified"}), 400
 
 if __name__ == "__main__":
     app.run(debug=True, use_reloader=False)

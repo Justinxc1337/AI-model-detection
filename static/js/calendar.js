@@ -1,17 +1,34 @@
 document.addEventListener("DOMContentLoaded", function () {
     const detectionDatesDiv = document.getElementById("detection-data");
     if (detectionDatesDiv) {
-        const detectionDates = JSON.parse(detectionDatesDiv.textContent);
-        console.log("Detection Dates from Backend:", detectionDates);
-
-        // Generate the calendar and highlight dates
-        generateCalendar(detectionDates);
+        fetchDetectionFiles();
     } else {
         console.error("Detection data div not found.");
     }
 });
 
-function generateCalendar(detectionDates) {
+async function fetchDetectionFiles() {
+    try {
+        const response = await fetch('http://127.0.0.1:5000/api/detection-files');
+        const filenames = await response.json();
+        console.log("Detection Files from Backend:", filenames);
+
+        // Generate the calendar and highlight dates
+        const detectionDates = filenames.map(filename => {
+            const dateMatch = filename.match(/(\d{2})D, (\d{2})M, (\d{4})Y/);
+            if (dateMatch) {
+                const [_, day, month, year] = dateMatch;
+                return `${String(day).padStart(2, "0")} ${String(month).padStart(2, "0")} ${year}`;
+            }
+        }).filter(Boolean);
+
+        generateCalendar(detectionDates, filenames);
+    } catch (error) {
+        console.error('Error fetching detection files:', error);
+    }
+}
+
+function generateCalendar(detectionDates, filenames) {
     const calendarContainer = document.getElementById("calendar");
     if (!calendarContainer) {
         console.error("Calendar container not found.");
@@ -20,14 +37,17 @@ function generateCalendar(detectionDates) {
 
     const currentYear = 2025;
 
-    // Process detection dates to group detections by day
-    const formattedDetectionDates = detectionDates.reduce((acc, dateTime) => {
-        const [day, month, year, time] = dateTime.split(" ");
-        const date = `${day} ${month} ${year}`;
+    // Group detections by day
+    const formattedDetectionDates = detectionDates.reduce((acc, date, index) => {
         if (!acc[date]) {
             acc[date] = [];
         }
-        acc[date].push(time);
+        const timestamp = filenames[index].match(/(\d{2})D, (\d{2})M, (\d{4})Y_(\d{2})H, (\d{2})M, (\d{2})S/);
+        if (timestamp) {
+            const [_, day, month, year, hour, minute, second] = timestamp;
+            const formattedTimestamp = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')} ${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}`;
+            acc[date].push(formattedTimestamp);
+        }
         return acc;
     }, {});
 
@@ -77,15 +97,14 @@ function generateCalendar(detectionDates) {
             if (detections) {
                 dayDiv.classList.add("detection-day");
 
-                // Display detection count below the date
                 const countBadge = document.createElement("div");
                 countBadge.className = "detection-count";
                 countBadge.textContent = `DTs: ${detections.length}`;
                 dayDiv.appendChild(countBadge);
 
-                // Add click event to show detection details
-                dayDiv.addEventListener("click", function (event) {
-                    showDetectionDetails(event, formattedDate, detections);
+                // On clicking the date, show the detection details above the date
+                dayDiv.addEventListener("click", function () {
+                    showDetectionDetails(dayDiv, formattedDate, detections);
                 });
             }
 
@@ -97,51 +116,62 @@ function generateCalendar(detectionDates) {
     }
 }
 
-function showDetectionDetails(event, date, detections) {
-    const existingPopup = document.querySelector(".detection-popup");
-    if (existingPopup) {
-        existingPopup.remove();
+let currentDetailsBox = null;
+
+function showDetectionDetails(dayDiv, date, detections) {
+    if (currentDetailsBox) {
+        currentDetailsBox.remove();
     }
 
-    const popup = document.createElement("div");
-    popup.className = "detection-popup";
+    // Create a new details box
+    const detailsBox = document.createElement("div");
+    detailsBox.className = "detection-details-box";
 
-    const popupContent = document.createElement("div");
-    popupContent.className = "detection-popup-content";
+    const detailsTitle = document.createElement("h4");
+    detailsTitle.textContent = `Detections on ${date}`;
+    detailsBox.appendChild(detailsTitle);
 
-    const closeButton = document.createElement("span");
-    closeButton.className = "close-popup";
-    closeButton.textContent = "×";
-    closeButton.onclick = () => popup.remove();
-    popupContent.appendChild(closeButton);
-
-    const title = document.createElement("h3");
-    title.textContent = `Detections for ${date}`;
-    popupContent.appendChild(title);
-
-    const detectionList = document.createElement("ul");
-    detectionList.className = "detection-list";
-
-    detections.forEach(time => {
-        if (time) {
-            const listItem = document.createElement("li");
-            listItem.className = "detection-list-item";
-
-            const timeLink = document.createElement("a");
-            timeLink.href = `/dashboard?timestamp=${date} ${time}`;
-            timeLink.textContent = `Time: ${time}`;
-            timeLink.className = "detection-time-link";
-            listItem.appendChild(timeLink);
-
-            detectionList.appendChild(listItem);
+    const detailsList = document.createElement("ul");
+    detections.forEach(timestamp => {
+        const timeMatch = timestamp.match(/\d{2}:\d{2}:\d{2}/);
+        if (timeMatch) {
+            const li = document.createElement("li");
+            li.textContent = `Timestamp: ${timeMatch[0]}`;
+            detailsList.appendChild(li);
         }
     });
+    detailsBox.appendChild(detailsList);
 
-    popupContent.appendChild(detectionList);
-    popup.appendChild(popupContent);
-    document.body.appendChild(popup);
+    dayDiv.insertBefore(detailsBox, dayDiv.firstChild);
 
-    const rect = event.target.getBoundingClientRect();
-    popup.style.top = `${rect.top + window.scrollY + rect.height}px`;
-    popup.style.left = `${rect.left + window.scrollX}px`;
+    currentDetailsBox = detailsBox;
+
+    document.addEventListener('click', function (event) {
+        if (!detailsBox.contains(event.target) && !dayDiv.contains(event.target)) {
+            detailsBox.remove();
+            currentDetailsBox = null;
+        }
+    }, { once: true });
+}
+
+function exportData() {
+    const format = document.getElementById("export-select").value;
+    if (!format) {
+        alert("Please select a format to export.");
+        return;
+    }
+
+    fetch(`/export_data?format=${format}`)
+        .then(response => response.blob())
+        .then(blob => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = `data.${format}`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+        })
+        .catch(error => console.error('Error exporting data:', error));
 }

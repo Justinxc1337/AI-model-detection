@@ -52,6 +52,27 @@ function sendEmail() {
         });
 }
 
+function exportData() {
+    const format = document.getElementById("export-select").value;
+    if (!format) {
+        alert("Please select a format to export.");
+        return;
+    }
+
+    fetch(`/export_data?format=${format}`)
+        .then(response => response.blob())
+        .then(blob => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = `data.${format}`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+        })
+        .catch(error => console.error('Error exporting data:', error));
+}
 
 window.onclick = function(event) {
     const imgmodel = document.getElementById('image-imgmodel');
