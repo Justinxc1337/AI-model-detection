@@ -1,8 +1,8 @@
 # Custom gitignores
 config.json
-*original
-*annotated
-*videos
+#*original
+#*annotated
+#*videos
 # *original, *annotated and *videos for temp ignores
 
 # Byte-compiled / optimized / DLL files
